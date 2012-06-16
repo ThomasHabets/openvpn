@@ -214,7 +214,9 @@ void tls_ctx_free_cert_file (openvpn_x509_cert_t *x509);
  * @return 			1 if an error occurred, 0 if parsing was
  * 				successful.
  */
-int tls_ctx_load_priv_file (struct tls_root_ctx *ctx, const char *priv_key_file
+int tls_ctx_load_priv_file (struct tls_root_ctx *ctx,
+                            const char *priv_key_engine,
+                            const char *priv_key_file
 #if ENABLE_INLINE_FILES
     , const char *priv_key_file_inline
 #endif

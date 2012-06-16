@@ -437,7 +437,8 @@ tls_ctx_free_cert_file (X509 *x509)
 }
 
 int
-tls_ctx_load_priv_file (struct tls_root_ctx *ctx, const char *priv_key_file
+tls_ctx_load_priv_file (struct tls_root_ctx *ctx, const char *priv_key_engine,
+                        const char *priv_key_file
 #if ENABLE_INLINE_FILES
     , const char *priv_key_file_inline
 #endif
@@ -463,9 +464,22 @@ tls_ctx_load_priv_file (struct tls_root_ctx *ctx, const char *priv_key_file
   if (!in)
     goto end;
 
-  pkey = PEM_read_bio_PrivateKey (in, NULL,
-                                  ssl_ctx->default_passwd_callback,
-                                  ssl_ctx->default_passwd_callback_userdata);
+  if (priv_key_engine) {
+    ENGINE *engine;
+
+    ENGINE_load_builtin_engines();
+    engine = ENGINE_by_id(priv_key_engine);
+    if (!ENGINE_init(engine)) {
+      msg (M_WARN|M_SSL, "Cannot init engine %s", priv_key_engine);
+      goto end;
+    }
+    pkey = ENGINE_load_private_key(engine, priv_key_file, UI_OpenSSL(), NULL);
+  } else {
+    pkey = PEM_read_bio_PrivateKey (in, NULL,
+                                    ssl_ctx->default_passwd_callback,
+                                    ssl_ctx->default_passwd_callback_userdata);
+  }
+
   if (!pkey)
     goto end;
 
@@ -1198,3 +1212,9 @@ get_highest_preference_tls_cipher (char *buf, int size)
 }
 
 #endif /* defined(ENABLE_SSL) && defined(ENABLE_CRYPTO_OPENSSL) */
+/* ---- Emacs Variables ----
+ * Local Variables:
+ * c-basic-offset: 2
+ * indent-tabs-mode: nil
+ * End:
+ */
